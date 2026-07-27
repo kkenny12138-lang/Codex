@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Skill = {
   name: string;
@@ -161,10 +161,111 @@ const skills: Skill[] = [
 
 const categories = ["全部", ...Array.from(new Set(skills.map((skill) => skill.category)))];
 
+const skillDetails: Record<string, {
+  scenario: string;
+  capabilities: string[];
+  outputs: string[];
+}> = {
+  "write-prd": {
+    scenario: "当你需要把零散想法、业务反馈或会议纪要，转化为团队可以评审和落地的产品需求时使用。",
+    capabilities: ["判断完整项目或小型迭代类型", "明确背景、目标、范围与业务规则", "拆解角色、流程、异常和边界状态", "编写可验证的验收标准与指标", "标记假设、风险和待决策问题"],
+    outputs: ["完整项目 PRD", "小型迭代 PRD", "PRD 评审意见", "需求补全与改写稿"],
+  },
+  imagegen: {
+    scenario: "需要从文字描述生成原创位图，或对现有图片进行风格、构图、元素和质感调整时使用。",
+    capabilities: ["生成插画、照片感视觉与产品素材", "编辑、增删或替换图片元素", "制作透明背景主体与视觉变体", "根据参考图保持风格一致性"],
+    outputs: ["PNG/JPEG 视觉素材", "产品与营销配图", "插画及场景图", "图像编辑版本"],
+  },
+  "openai-docs": {
+    scenario: "开发 OpenAI API、选择模型、迁移提示词，或需要核对 Codex 与 OpenAI 产品最新能力时使用。",
+    capabilities: ["检索最新官方文档", "解释模型、API 与工具能力", "提供官方引用和实现建议", "辅助模型升级与提示词迁移"],
+    outputs: ["技术解答", "API 示例", "模型选型建议", "官方文档引用"],
+  },
+  "plugin-creator": {
+    scenario: "需要把技能、连接器和应用能力组合成一个可安装、可分发的 Codex 插件时使用。",
+    capabilities: ["生成插件目录与清单", "配置技能和 MCP 结构", "维护个人市场条目", "校验插件元数据与安装流程"],
+    outputs: ["Codex 插件目录", "plugin.json", "市场配置", "可安装插件包"],
+  },
+  "skill-creator": {
+    scenario: "希望把个人方法论、专业知识或固定工作流程封装成 Codex 可以稳定执行的技能时使用。",
+    capabilities: ["设计触发条件与执行边界", "编写分步骤工作流", "组织参考资料、脚本和模板", "检查技能的可复用性与安全性"],
+    outputs: ["SKILL.md", "技能参考资料", "辅助脚本", "技能资源包"],
+  },
+  "skill-installer": {
+    scenario: "希望扩展 Codex 能力，从精选来源或 GitHub 仓库添加现成技能时使用。",
+    capabilities: ["查看可安装技能", "安装精选技能", "从仓库路径安装技能", "处理公开或私有仓库来源"],
+    outputs: ["已安装技能", "安装结果说明", "技能目录更新"],
+  },
+  browser: {
+    scenario: "需要在已有登录状态的浏览器中打开页面、填写内容、点击操作或验证网页行为时使用。",
+    capabilities: ["打开并导航网页", "读取可见内容与交互状态", "点击、输入和提交表单", "进行页面截图与本地网页测试"],
+    outputs: ["网页操作结果", "页面状态检查", "截图", "交互验证记录"],
+  },
+  documents: {
+    scenario: "需要创建专业 Word 文档，或对现有文档进行编辑、批注、修订和版式校验时使用。",
+    capabilities: ["创建和编辑 DOCX", "批注、修订与红线对比", "应用样式、目录和页眉页脚", "逐页渲染并检查最终版式"],
+    outputs: ["Word 文档", "修订稿", "批注版", "可转 Google Docs 的文稿"],
+  },
+  pdf: {
+    scenario: "需要读取、整理或制作版式准确的 PDF，特别是表单、报告和最终交付文件时使用。",
+    capabilities: ["提取 PDF 文本和结构", "创建与合并 PDF", "填写或制作 AcroForm 表单", "逐页渲染并检查布局"],
+    outputs: ["PDF 报告", "合并或拆分文件", "可填写表单", "PDF 内容分析"],
+  },
+  presentations: {
+    scenario: "需要把内容转化为具有叙事结构和视觉一致性的演示文稿，或优化已有 PPT 时使用。",
+    capabilities: ["规划演示结构与故事线", "创建和编辑 PPTX", "制作图表、版式与视觉层级", "渲染检查文字溢出和页面一致性"],
+    outputs: ["PowerPoint 演示稿", "Google Slides 就绪稿", "演讲结构", "视觉优化版本"],
+  },
+  spreadsheets: {
+    scenario: "需要创建、清洗、分析或验证独立表格文件，处理计算、图表和数据汇总时使用。",
+    capabilities: ["创建与编辑 XLSX/CSV/TSV", "编写公式和数据校验", "分析数据并生成图表", "检查计算结果与表格格式"],
+    outputs: ["Excel 工作簿", "CSV/TSV 文件", "数据分析表", "图表与汇总结果"],
+  },
+  "excel-live-control": {
+    scenario: "Microsoft Excel 已打开且已建立连接，希望直接在当前工作簿内完成操作时使用。",
+    capabilities: ["读取当前工作表", "编辑单元格、公式和格式", "控制表格与工作簿结构", "在原文件中实时验证结果"],
+    outputs: ["已更新的实时工作簿", "公式与格式调整", "当前表格分析结果"],
+  },
+  "sites-building": {
+    scenario: "需要从需求快速构建可用的网站、落地页、看板、门户或轻量互动工具时使用。",
+    capabilities: ["规划信息架构与页面体验", "实现响应式界面与交互", "接入持久化、认证和外部数据", "执行构建检查与产品化收尾"],
+    outputs: ["完整网站源码", "响应式网页", "交互式工具", "可部署站点版本"],
+  },
+  "sites-hosting": {
+    scenario: "网站已经完成，需要保存版本、发布上线或管理生产环境访问方式时使用。",
+    capabilities: ["创建与管理站点", "保存可回溯版本", "部署私有或共享生产站点", "管理环境变量、域名与访问设置"],
+    outputs: ["生产网站链接", "已保存站点版本", "部署状态", "托管配置"],
+  },
+  visualize: {
+    scenario: "当普通文字不足以解释关系、变化或方案差异，需要用户自己探索数据与情景时使用。",
+    capabilities: ["制作图表、关系图和时间线", "构建可调参数模拟器", "生成地图与交互式数据探索", "在对话中直接呈现可视化"],
+    outputs: ["交互式图表", "模拟器与实验室", "地图", "比较与关系视图"],
+  },
+  "template-creator": {
+    scenario: "你有一份满意的参考成品，希望以后持续复用相同结构、视觉与写作风格时使用。",
+    capabilities: ["分析参考成品的结构与风格", "提取可复用规则和资源", "创建个人模板技能", "更新已有模板并保持一致性"],
+    outputs: ["可复用模板技能", "模板说明", "结构与样式规范", "模板资源包"],
+  },
+};
+
 export default function Home() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("全部");
   const [owner, setOwner] = useState<"all" | "mine" | "codex">("all");
+  const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
+
+  useEffect(() => {
+    if (!selectedSkill) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedSkill(null);
+    };
+    document.body.classList.add("drawer-open");
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.classList.remove("drawer-open");
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [selectedSkill]);
 
   const filtered = useMemo(
     () =>
@@ -292,6 +393,16 @@ export default function Home() {
               className={`skill-card ${skill.owner === "mine" ? "is-mine" : ""}`}
               key={skill.name}
               style={{ "--accent": skill.accent } as React.CSSProperties}
+              role="button"
+              tabIndex={0}
+              aria-label={`查看 ${skill.title} 详情`}
+              onClick={() => setSelectedSkill(skill)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setSelectedSkill(skill);
+                }
+              }}
             >
               <div className="card-top">
                 <span className="card-index">{String(index + 1).padStart(2, "0")}</span>
@@ -307,7 +418,7 @@ export default function Home() {
                 <p>{skill.description}</p>
               </div>
               <div className="card-footer">
-                <span>AVAILABLE</span>
+                <span>查看详细能力</span>
                 <span className="arrow">↗</span>
               </div>
             </article>
@@ -324,6 +435,62 @@ export default function Home() {
           </div>
         )}
       </section>
+
+      {selectedSkill && (
+        <div className="detail-backdrop" role="presentation" onMouseDown={() => setSelectedSkill(null)}>
+          <section
+            className="detail-drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="detail-title"
+            style={{ "--accent": selectedSkill.accent } as React.CSSProperties}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="detail-head">
+              <div className="detail-glyph">{selectedSkill.glyph}</div>
+              <button className="detail-close" onClick={() => setSelectedSkill(null)} aria-label="关闭详情">
+                ×
+              </button>
+            </div>
+            <div className="detail-label">
+              {selectedSkill.owner === "mine" ? "MY SKILL" : "CODEX SKILL"} / {selectedSkill.category}
+            </div>
+            <h2 id="detail-title">{selectedSkill.title}</h2>
+            <code className="detail-code">{selectedSkill.name}</code>
+            <p className="detail-summary">{selectedSkill.description}</p>
+
+            <div className="detail-block">
+              <span className="detail-number">01</span>
+              <div>
+                <h3>什么时候使用</h3>
+                <p>{skillDetails[selectedSkill.name].scenario}</p>
+              </div>
+            </div>
+            <div className="detail-block">
+              <span className="detail-number">02</span>
+              <div>
+                <h3>核心能力</h3>
+                <ul>
+                  {skillDetails[selectedSkill.name].capabilities.map((item) => <li key={item}>{item}</li>)}
+                </ul>
+              </div>
+            </div>
+            <div className="detail-block">
+              <span className="detail-number">03</span>
+              <div>
+                <h3>典型产出</h3>
+                <div className="output-tags">
+                  {skillDetails[selectedSkill.name].outputs.map((item) => <span key={item}>{item}</span>)}
+                </div>
+              </div>
+            </div>
+            <div className="detail-tip">
+              <span>TIP</span>
+              <p>在对话中直接描述你的目标，Codex 会在适合时调用这项技能。</p>
+            </div>
+          </section>
+        </div>
+      )}
 
       <footer>
         <div>
