@@ -18,3 +18,4 @@ cd skill-gallery
 npm install
 npm run dev
 ```
+sed: --: No such file or directory

@@ -1,0 +1,5 @@
+sed: --: No such file or directory
+interface:
+  display_name: "PRD 编写助手"
+  short_description: "将产品想法系统整理为清晰、可评审且可执行的完整 PRD"
+  default_prompt: "使用 $write-prd 将我的产品想法整理成一份可评审的 PRD。"
