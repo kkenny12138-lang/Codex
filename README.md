@@ -1,4 +1,3 @@
-sed: --: No such file or directory
 # vinext-starter
 
 A clean full-stack starter running on

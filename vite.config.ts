@@ -1,4 +1,3 @@
-sed: --: No such file or directory
 import vinext from "vinext";
 import { defineConfig } from "vite";
 import hostingConfig from "./.openai/hosting.json";

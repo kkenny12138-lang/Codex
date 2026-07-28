@@ -1,4 +1,3 @@
-sed: --: No such file or directory
 import assert from "node:assert/strict";
 import { access, readFile, readdir } from "node:fs/promises";
 import test from "node:test";

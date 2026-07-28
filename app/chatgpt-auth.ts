@@ -1,4 +1,3 @@
-sed: --: No such file or directory
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 

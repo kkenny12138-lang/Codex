@@ -1,4 +1,3 @@
-sed: --: No such file or directory
 import { desc } from "drizzle-orm";
 import { getDb } from "../../../../../db";
 import { notes } from "../../../db/schema";
