@@ -18,6 +18,8 @@ const seedItems: Item[] = [
   { id: 2, name: "雾蓝衬衫", space: "衣柜", category: "上装", color: "雾蓝色", note: "适合通勤", icon: "👔" },
   { id: 3, name: "米白帆布包", space: "衣柜", category: "配饰", color: "米白色", note: "周末出门", icon: "👜" },
   { id: 4, name: "深咖半身裙", space: "衣柜", category: "下装", color: "深咖色", note: "换季收纳", icon: "👗" },
+  { id: 7, name: "焦糖短外套", space: "衣柜", category: "外套", color: "焦糖色", note: "初秋常穿", icon: "🧥" },
+  { id: 8, name: "奶油色乐福鞋", space: "衣柜", category: "鞋履", color: "奶油色", note: "轻松通勤", icon: "👞" },
   { id: 5, name: "白瓷马克杯", space: "厨房", category: "杯具", color: "奶白色", note: "每天早餐", icon: "☕" },
   { id: 6, name: "铸铁煎锅", space: "厨房", category: "锅具", color: "黑色", note: "适合煎牛排", icon: "🍳" },
 ];
@@ -28,16 +30,31 @@ const spaces = [
 ];
 
 export default function Home() {
-  const [page, setPage] = useState<"首页" | "我的世界">("首页");
+  const [page, setPage] = useState<"首页" | "我的世界" | "形象穿搭">("首页");
   const [space, setSpace] = useState<Space>("衣柜");
   const [items, setItems] = useState<Item[]>(seedItems);
   const [query, setQuery] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [added, setAdded] = useState(false);
+  const [lookSaved, setLookSaved] = useState(false);
+  const [face, setFace] = useState("柔和");
+  const [skin, setSkin] = useState("#e9b994");
+  const [hair, setHair] = useState("短发");
+  const [body, setBody] = useState(2);
+  const [outfit, setOutfit] = useState<Record<string, number>>({ 上装: 1, 下装: 4, 鞋履: 8 });
 
   useEffect(() => {
     const saved = localStorage.getItem("my-closet-items");
     if (saved) setItems(JSON.parse(saved));
+    const savedAvatar = localStorage.getItem("my-closet-avatar");
+    if (savedAvatar) {
+      const avatar = JSON.parse(savedAvatar);
+      setFace(avatar.face || "柔和");
+      setSkin(avatar.skin || "#e9b994");
+      setHair(avatar.hair || "短发");
+      setBody(avatar.body || 2);
+      setOutfit(avatar.outfit || { 上装: 1, 下装: 4, 鞋履: 8 });
+    }
   }, []);
 
   useEffect(() => {
@@ -67,6 +84,14 @@ export default function Home() {
     setAdded(true);
     window.setTimeout(() => setAdded(false), 2400);
   }
+
+  function saveLook() {
+    localStorage.setItem("my-closet-avatar", JSON.stringify({ face, skin, hair, body, outfit }));
+    setLookSaved(true);
+    window.setTimeout(() => setLookSaved(false), 2400);
+  }
+
+  const selectedByCategory = (category: string) => items.find((item) => item.id === outfit[category]);
 
   return (
     <main>
@@ -129,7 +154,7 @@ export default function Home() {
             </div>
           </section>
         </div>
-      ) : (
+      ) : page === "我的世界" ? (
         <div className="page world-page">
           <nav className="crumb"><button onClick={() => setPage("首页")}>首页</button><span>/</span><b>我的世界</b></nav>
           <section className="world-head">
@@ -161,13 +186,72 @@ export default function Home() {
             </div>
           ) : <div className="empty"><span>⌕</span><h3>还没有找到物品</h3><p>换个关键词，或者记录一件新物品吧。</p></div>}
         </div>
+      ) : (
+        <div className="page studio-page">
+          <nav className="crumb"><button onClick={() => setPage("首页")}>首页</button><span>/</span><b>形象穿搭</b></nav>
+          <section className="studio-head">
+            <div><p className="date">MY AVATAR</p><h1>捏出一个，<em>像你的你。</em></h1><p>创建专属形象，再把衣柜里的真实衣服穿到身上。</p></div>
+            <button className="save-look" onClick={saveLook}>保存我的形象</button>
+          </section>
+
+          <section className="studio-layout">
+            <div className="avatar-stage">
+              <div className="stage-label"><span>今日穿搭</span><small>LOOK 01</small></div>
+              <div className={`person body-${body}`}>
+                <div className={`hair hair-${hair}`} />
+                <div className={`person-head face-${face}`} style={{ background: skin }}>
+                  <span className="eyes">•　•</span><span className="mouth">{face === "元气" ? "⌣" : face === "清冷" ? "—" : "◡"}</span>
+                </div>
+                <div className="neck" style={{ background: skin }} />
+                <div className="person-body">
+                  <div className="arms" style={{ background: skin }} />
+                  <div className="top-piece">{selectedByCategory("上装")?.icon || "👕"}</div>
+                  {selectedByCategory("外套") && <div className="coat-piece">{selectedByCategory("外套")?.icon}</div>}
+                  <div className="bottom-piece">{selectedByCategory("下装")?.icon || "👖"}</div>
+                  <div className="legs" style={{ background: skin }} />
+                  <div className="shoes-piece">{selectedByCategory("鞋履")?.icon || "👟"}</div>
+                  {selectedByCategory("配饰") && <div className="accessory-piece">{selectedByCategory("配饰")?.icon}</div>}
+                </div>
+              </div>
+              <p className="look-caption">{[selectedByCategory("上装"), selectedByCategory("下装"), selectedByCategory("鞋履")].filter(Boolean).map((i) => i?.name).join(" · ")}</p>
+            </div>
+
+            <div className="custom-panel">
+              <div className="editor-block">
+                <div className="editor-title"><span>01</span><h2>脸与发型</h2></div>
+                <label className="option-label">脸部气质</label>
+                <div className="choice-row">{["柔和", "元气", "清冷"].map((v) => <button className={face === v ? "active" : ""} onClick={() => setFace(v)} key={v}>{v}</button>)}</div>
+                <label className="option-label">肤色</label>
+                <div className="swatches">{["#f3ceb0", "#e9b994", "#c98d68", "#8d5a40"].map((v) => <button key={v} aria-label={`选择肤色${v}`} className={skin === v ? "active" : ""} style={{ background: v }} onClick={() => setSkin(v)} />)}</div>
+                <label className="option-label">发型</label>
+                <div className="choice-row">{["短发", "长发", "丸子"].map((v) => <button className={hair === v ? "active" : ""} onClick={() => setHair(v)} key={v}>{v}</button>)}</div>
+              </div>
+
+              <div className="editor-block">
+                <div className="editor-title"><span>02</span><h2>身材比例</h2></div>
+                <label className="option-label" htmlFor="body-range">体型轮廓 <b>{["轻盈", "匀称", "柔和"][body - 1]}</b></label>
+                <input id="body-range" className="body-range" type="range" min="1" max="3" value={body} onChange={(e) => setBody(Number(e.target.value))} />
+                <div className="range-labels"><span>轻盈</span><span>匀称</span><span>柔和</span></div>
+              </div>
+
+              <div className="editor-block wardrobe-editor">
+                <div className="editor-title"><span>03</span><h2>从衣柜选穿搭</h2></div>
+                {["上装", "下装", "外套", "鞋履", "配饰"].map((category) => {
+                  const choices = items.filter((item) => item.space === "衣柜" && item.category === category);
+                  if (!choices.length) return null;
+                  return <div className="outfit-row" key={category}><label>{category}</label><div>{choices.map((item) => <button key={item.id} title={item.name} className={outfit[category] === item.id ? "active" : ""} onClick={() => setOutfit((current) => ({ ...current, [category]: current[category] === item.id && ["外套", "配饰"].includes(category) ? 0 : item.id }))}><span>{item.icon}</span><small>{item.name}</small></button>)}</div></div>;
+                })}
+              </div>
+            </div>
+          </section>
+        </div>
       )}
 
       <nav className="bottom-nav" aria-label="主导航">
         <button className={page === "首页" ? "active" : ""} onClick={() => setPage("首页")}><span>⌂</span>首页</button>
         <button className={page === "我的世界" ? "active" : ""} onClick={() => setPage("我的世界")}><span>◫</span>我的世界</button>
         <button onClick={() => { setPage("我的世界"); setShowAdd(true); }}><span>＋</span>记录</button>
-        <button><span>♡</span>心愿</button>
+        <button className={page === "形象穿搭" ? "active" : ""} onClick={() => setPage("形象穿搭")}><span>♙</span>穿搭</button>
         <button><span>○</span>我的</button>
       </nav>
 
@@ -183,6 +267,7 @@ export default function Home() {
         </div>
       )}
       {added && <div className="toast">✓ 已经收进{space}啦</div>}
+      {lookSaved && <div className="toast">✓ 形象和穿搭已保存</div>}
     </main>
   );
 }
