@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Skill Atlas｜我的技能地图",
-  description: "集中展示我的个人技能与 Codex 当前可用的专业能力。",
+  title: "我的衣柜｜记录家的每一件喜欢",
+  description: "轻松记录衣柜、厨房和家里的每一件物品。",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
